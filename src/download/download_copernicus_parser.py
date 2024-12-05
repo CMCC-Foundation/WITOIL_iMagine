@@ -289,8 +289,8 @@ def download_copernicus(
                 # saves the daily current or temperature netcdf in the case dir
                 ds.to_netcdf(output_name)
 
-                # remove the temporary files
-                temp_files = [os.path.join(output_path, "curr.nc"), os.path.join(output_path, "temp.nc")]
-                for temp_file in temp_files:
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
+        # remove the temporary files
+        temp_files = [os.path.join(output_path, "curr.nc"), os.path.join(output_path, "temp.nc")]
+        for temp_file in temp_files:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
