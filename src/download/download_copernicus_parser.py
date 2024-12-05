@@ -74,7 +74,9 @@ def download_copernicus(
         ds.to_netcdf(output_name)
 
         # remove the temporary files
-        subprocess.run([f"rm -rf {output_path}temp.nc"], shell=True)
+        temp_file = os.path.join(output_path, "temp.nc")
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
 
     else:
 
@@ -150,6 +152,7 @@ def download_copernicus(
         ds.to_netcdf(output_name)
 
         # remove the temporary files
-        subprocess.run(
-            [f"rm -rf {output_path}/curr.nc {output_path}/temp.nc"], shell=True
-        )
+        temp_files = [os.path.join(output_path, "curr.nc"), os.path.join(output_path, "temp.nc")]
+        for temp_file in temp_files:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)

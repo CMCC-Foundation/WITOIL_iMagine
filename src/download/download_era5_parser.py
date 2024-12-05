@@ -6,6 +6,7 @@ import cdsapi
 import argparse
 import subprocess
 import time
+from glob import glob as gg
 
 # Functions outside this script
 from WITOIL_iMagine.src.utils.utils import *
@@ -79,7 +80,10 @@ def process_era5(output_path,output_name):
     met.to_netcdf(output_name)
 
     #remove the temporary files
-    subprocess.run([f'rm -rf {output_path}/temp*.nc'],shell=True)
+    temp_files = gg(os.path.join(output_path, "temp*.nc"))
+    for temp_file in temp_files:
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
 
 
 if __name__ == '__main__':
@@ -126,4 +130,3 @@ if __name__ == '__main__':
     # os.system('rm ' + out_folder + '/output.nc')
 
     # os.system('rm ' + out_folder + '/pre_*.nc')
-

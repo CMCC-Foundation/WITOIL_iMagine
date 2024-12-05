@@ -219,14 +219,20 @@ class PreProcessing:
 
         med_for = f'{self.exp_folder}/xp_files/medslik_II.for'
 
-        subprocess.run([f'cp WITOIL_iMagine/src/templates/medslik_II_template.for {med_for}'],shell=True)
+        # Refactored: Copying the template file
+        template_path = 'WITOIL_iMagine/src/templates/medslik_II_template.for'
+        shutil.copy(template_path, med_for)
 
-        # Replacing NMAX in medslik fortran with a python function
+        # Replacing NMAX in medslik Fortran with a Python function
         Utils.search_and_replace(med_for, 'NMAX', str(nmax))
 
     def configuration_parameters(self):
 
-        subprocess.run([f'cp WITOIL_iMagine/src/templates/config2.txt {self.exp_folder}/xp_files/config2.txt'],shell=True)
+        source_file = 'WITOIL_iMagine/src/templates/config2.txt'
+        destination_file = f'{self.exp_folder}/xp_files/config2.txt'
+
+        # Refactored: Copy the file
+        shutil.copy(source_file, destination_file)
 
     def common_grid(self):
 
@@ -271,9 +277,9 @@ class PreProcessing:
             config_file = f"WITOIL_iMagine/cases/{simname}/xp_files/config1.txt"
         else:
             config_file = f"WITOIL_iMagine/cases/{simname}/xp_files/slick{s_num+1}/config1.txt"
-        subprocess.run(
-            [f"cp WITOIL_iMagine/src/templates/config1_template_0.txt {config_file}"], shell=True
-        )
+        # Refactored: Copy the template file
+        source_file = "WITOIL_iMagine/src/templates/config1_template_0.txt"
+        shutil.copy(source_file, config_file)
         # adding spill Name - Add slick number if separate slicks
         if separate_slicks == False:
             Utils.search_and_replace(config_file, "RUNNAME", simname)
@@ -331,4 +337,3 @@ class PreProcessing:
 if __name__ == "__main__":
     
     pass
-

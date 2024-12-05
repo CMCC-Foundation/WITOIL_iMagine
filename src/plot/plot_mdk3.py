@@ -180,7 +180,7 @@ class MedslikIIPlot:
                 f"magick -delay 20 -loop 0 {path}/*surf_oil_*.png \
                     {self.out_figures}/oil_concentration_{self.config['simulation']['name']}.gif"
             ],
-            shell=True,
+            # shell=True,
         )
 
     def plot_pyngl(
@@ -208,7 +208,7 @@ class MedslikIIPlot:
                                 {sim_length} {plot_lon[0]} {plot_lon[1]} \
                                 {plot_lat[0]} {plot_lat[1]}"
             ],
-            shell=True,
+            # shell=True,
             check=True,
         )
 

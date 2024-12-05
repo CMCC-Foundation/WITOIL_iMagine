@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from argparse import ArgumentParser
-from glob import glob
+from glob import glob as gg
 
 # Import medslik modules
 from src.utils import Utils, Config, read_oilbase
@@ -183,16 +183,13 @@ class MedslikII:
                 password=copernicus_pass,
             )
 
-            subprocess.run(
-                [
-                    f'cp {output_path}*{identifier}*{config["simulation"]["name"]}*.nc {root_directory}/oce_files/'
-                ],
-                shell=True,
-            )
-            subprocess.run(
-                [f'rm {output_path}*{identifier}*{config["simulation"]["name"]}*.nc'],
-                shell=True,
-            )
+            source_files = gg(f"{output_path}*{identifier}*{config['simulation']['name']}*.nc")
+            destination = os.path.join(root_directory, "oce_files")
+            for file in source_files:
+                shutil.copy(file, destination)
+
+            for file in gg(f"{output_path}*{identifier}*{config['simulation']['name']}*.nc"):
+                os.remove(file)
 
         if config["download"]["download_wind"]:
             # ensuring .cdsapirc is created in the home directory
@@ -216,16 +213,13 @@ class MedslikII:
             )
             process_era5(output_path=output_path, output_name=output_name)
 
-            subprocess.run(
-                [
-                    f'cp {output_path}*{identifier}*{config["simulation"]["name"]}*.nc {root_directory}/met_files/'
-                ],
-                shell=True,
-            )
-            subprocess.run(
-                [f'rm {output_path}*{identifier}*{config["simulation"]["name"]}*.nc'],
-                shell=True,
-            )
+            source_files = gg(f"{output_path}*{identifier}*{config['simulation']['name']}*.nc")
+            destination = os.path.join(root_directory, "met_files")
+            for file in source_files:
+                shutil.copy(file, destination)
+
+            for file in gg(f"{output_path}*{identifier}*{config['simulation']['name']}*.nc"):
+                os.remove(file)
 
     def run_preproc(config: dict, exp_folder: str, lon_min, lon_max, lat_min, lat_max):
         """
@@ -343,98 +337,75 @@ class MedslikII:
 
         output_dir = f"{model_dir}OUT/MDK_SIM_{year}_{month:02d}_{day:02d}_{hour:02d}{minute:02d}_{simname}/."
 
-        # removing old outputes just to be sure
-        subprocess.run([f"rm -rf {output_dir}"], shell=True)
+        # Remove old outputs (equivalent to `rm -rf`)
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
 
-        if separate_slicks == False:
-            # copy METOCEAN files to MEDSLIK-II installation
-            subprocess.run(
-                [f"cp {simdir}{simname}/oce_files/*.mrc {model_dir}RUN/TEMP/OCE/"],
-                shell=True,
-                check=True,
-            )
-            subprocess.run(
-                [f"cp {simdir}{simname}/met_files/*.eri {model_dir}RUN/TEMP/MET/"],
-                shell=True,
-                check=True,
-            )
-            # copy bnc files
-            subprocess.run(
-                [f"cp {simdir}{simname}/bnc_files/* {model_dir}DTM_INP/"],
-                shell=True,
-                check=True,
-            )
-            # copy Extract and config files
-            subprocess.run(
-                [
-                    f"cp {simdir}{simname}/xp_files/medslik_II.for {model_dir}RUN/MODEL_SRC/"
-                ],
-                shell=True,
-                check=True,
-            )
-            subprocess.run(
-                [f"cp {simdir}{simname}/xp_files/config2.txt {model_dir}RUN/"],
-                shell=True,
-                check=True,
-            )
-            subprocess.run(
-                [f"cp {simdir}{simname}/xp_files/config1.txt {model_dir}RUN/"],
-                shell=True,
-                check=True,
-            )
-            # Compile and start running
-            subprocess.run(
-                [f"cd {model_dir}RUN/; sh MODEL_SRC/compile.sh; ./RUN.sh"],
-                shell=True,
-                check=True,
-            )
+        if not separate_slicks:
+            # Copy METOCEAN files
+            oce_files = gg(f"{simdir}{simname}/oce_files/*.mrc")
+            met_files = gg(f"{simdir}{simname}/met_files/*.eri")
+            bnc_files = gg(f"{simdir}{simname}/bnc_files/*")
+            xp_files = {
+                "medslik_II.for": os.path.join(simdir, simname, "xp_files", "medslik_II.for"),
+                "config2.txt": os.path.join(simdir, simname, "xp_files", "config2.txt"),
+                "config1.txt": os.path.join(simdir, simname, "xp_files", "config1.txt"),
+            }
+
+            # Copy METOCEAN, MET, and BNC files
+            for file in oce_files:
+                shutil.copy(file, os.path.join(model_dir, "RUN", "TEMP", "OCE"))
+            for file in met_files:
+                shutil.copy(file, os.path.join(model_dir, "RUN", "TEMP", "MET"))
+            for file in bnc_files:
+                shutil.copy(file, os.path.join(model_dir, "DTM_INP"))
+
+            # Copy other required files
+            for dest, src in xp_files.items():
+                shutil.copy(src, os.path.join(model_dir, "RUN", dest if "config" in dest else "MODEL_SRC"))
+
+            # Compile and start running (replacing `cd` with `cwd`)
+            compile_script = "MODEL_SRC/compile.sh"
+            run_script = "RUN.sh"
+            subprocess.run(["sh", compile_script], check=True, cwd=os.path.join(model_dir, "RUN"))
+            subprocess.run(["./" + run_script], check=True, cwd=os.path.join(model_dir, "RUN"))
 
         else:
-            slicks = glob(f"{simdir}{simname}/xp_files/*/")
-            for i in range(0, len(slicks)):
-                subprocess.run(
-                    [f"cp {simdir}{simname}/oce_files/*.mrc {model_dir}RUN/TEMP/OCE/"],
-                    shell=True,
-                )
-                subprocess.run(
-                    [f"cp {simdir}{simname}/met_files/*.eri {model_dir}RUN/TEMP/MET/"],
-                    shell=True,
-                )
-                # copy bnc files
-                subprocess.run(
-                    [f"cp {simdir}{simname}/bnc_files/* {model_dir}DTM_INP/"],
-                    shell=True,
-                )
-                # copy Extract and config files
-                subprocess.run(
-                    [
-                        f"cp {simdir}{simname}/xp_files/medslik_II.for {model_dir}RUN/MODEL_SRC/"
-                    ],
-                    shell=True,
-                )
-                subprocess.run(
-                    [f"cp {simdir}{simname}/xp_files/config2.txt {model_dir}RUN/"],
-                    shell=True,
-                )
-                subprocess.run(
-                    [
-                        f"cp {simdir}{simname}/xp_files/slick{i+1}/config1.txt {model_dir}RUN/"
-                    ],
-                    shell=True,
-                )
-                # Compile and start running
-                subprocess.run(
-                    [f"cd {model_dir}RUN/; sh MODEL_SRC/compile.sh; ./RUN.sh"],
-                    shell=True,
-                    check=True,
-                )
+            # Handle separate slicks
+            slicks = gg(f"{simdir}{simname}/xp_files/*/")
+            for i, slick_dir in enumerate(slicks):
+                # Copy METOCEAN, MET, and BNC files
+                oce_files = gg(f"{simdir}{simname}/oce_files/*.mrc")
+                met_files = gg(f"{simdir}{simname}/met_files/*.eri")
+                bnc_files = gg(f"{simdir}{simname}/bnc_files/*")
+                config1_path = os.path.join(simdir, simname, f"xp_files/slick{i + 1}/config1.txt")
 
-        # Send files to case dir and remove temp files
-        subprocess.run([f"cp -r {output_dir} {simdir}{simname}/out_files/"], shell=True)
-        subprocess.run(
-            [f"rm -rf {simdir}{simname}/out_files/MET {simdir}{simname}/out_files/OCE"],
-            shell=True,
-        )
+                for file in oce_files:
+                    shutil.copy(file, os.path.join(model_dir, "RUN", "TEMP", "OCE"))
+                for file in met_files:
+                    shutil.copy(file, os.path.join(model_dir, "RUN", "TEMP", "MET"))
+                for file in bnc_files:
+                    shutil.copy(file, os.path.join(model_dir, "DTM_INP"))
+                shutil.copy(config1_path, os.path.join(model_dir, "RUN", "config1.txt"))
+
+                # Compile and start running
+                compile_script = "MODEL_SRC/compile.sh"
+                run_script = "RUN.sh"
+                subprocess.run(["sh", compile_script], check=True, cwd=os.path.join(model_dir, "RUN"))
+                subprocess.run(["./" + run_script], check=True, cwd=os.path.join(model_dir, "RUN"))
+
+        # Copy output files (replacing `cp -r`)
+        output_dest = os.path.join(simdir, simname, "out_files")
+        if os.path.exists(output_dir):
+            shutil.copytree(output_dir, output_dest, dirs_exist_ok=True)
+
+        # Remove temporary MET and OCE files (equivalent to `rm -rf`)
+        temp_met = os.path.join(output_dest, "MET")
+        temp_oce = os.path.join(output_dest, "OCE")
+        if os.path.exists(temp_met):
+            shutil.rmtree(temp_met)
+        if os.path.exists(temp_oce):
+            shutil.rmtree(temp_oce)
 
 
 if __name__ == "__main__":
