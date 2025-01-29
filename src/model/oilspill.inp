@@ -1,0 +1,17 @@
+restart_hr    restart_min         Indicates if simulation is to restart at the given hour
+day 
+month 
+year                              Date of Spill
+hourminutes                       Time of Spill
+spl_dur                           Duration of Spill (hrs)
+spl_lat                           Latitude of Spill (degrees & minutes)
+spl_lon                           Longitude of Spill (degrees & minutes)
+sim_length                        Length of Simulation (hrs)
+001                               Interval for Printing Results to Output File
+0                                 Indicates that the spill positions will/will not (1/0) be corrected in accordance with the file 'medslik.crn'
+splrate                           Spill Rate (units/hr)
+tons                              Units for Oil Volume (tons)
+0                                 Slick Age
+isat                              0/1 if Satellite Data is used
+0                                 0/1 if Booms are deployed
+0                                 seed for random numbers generation. 0 if it should be computed, 6digits integer if it should be fixed.

@@ -9,10 +9,10 @@ src/plot/__pycache__/
 __pycache__/main.cpython-311.pyc
 src/download/__pycache__/__init__.cpython-311.pyc
 src/download/__pycache__/download_copernicus_parser.cpython-311.pyc
+src/download/__pycache__/downloader.cpython-311.pyc
 src/download/__pycache__/download_era5_parser.cpython-311.pyc
 # log files
-compile.log
-medslik_run.log
+*.log
 # folders and files used in other branches
 src/model/bin/
 src/model/mod/
@@ -25,45 +25,40 @@ src/model/test/data/test_envdata_20170423.nc
 src/model/test/data/test_envdata_20170424.nc
 src/model/test/data/test_envdata_20170425.nc
 fort.91
-output
+output/*
+!output/.gitkeep
 # data not uploaded
-data/gebco/GEBCO_2023.nc
-data/gshhs/GSHHS_shp/c/*
-data/gshhs/GSHHS_shp/f/*
-data/gshhs/GSHHS_shp/h/*
-data/gshhs/GSHHS_shp/i/*
-data/gshhs/GSHHS_shp/l/*
-data/gshhs/f/GSHHS_f_L1.shp
-data/gshhs/f/GSHHS_f_L1.shx
+input_data/coastline/gshhg/
+input_data/coastline/gshhg/GSHHS_shp/c/*
+input_data/coastline/gshhg/GSHHS_shp/f/*
+input_data/coastline/gshhg/GSHHS_shp/h/*
+input_data/coastline/gshhg/GSHHS_shp/i/*
+input_data/coastline/gshhg/GSHHS_shp/l/*
+input_data/coastline/gshhg/GSHHS_shp/README.TXT
+input_data/bathymetry/gebco/GEBCO_2023.nc
+input_data/bathymetry/gebco/GEBCO_2024.nc
+input_data/bathymetry/gebco/GEBCO_2024_sub_ice_topo.nc
 # algeria test case
-cases/algeria/out_files/
-cases/algeria/bnc_files/dtmcst1.d
-cases/algeria/xp_files/
-cases/algeria/bnc_files/
-cases/algeria/oce_files/
-cases/algeria/met_files/
-cases/algeria/*.log
-cases/algeria/detections
+testcase/algeria/out_files/
+testcase/algeria/bnc_files/dtmcst1.d
+testcase/algeria/xp_files/
+testcase/algeria/bnc_files/
+testcase/algeria/oce_files/
+testcase/algeria/met_files/
+testcase/algeria/*.log
+testcase/algeria/detections
 # paria test case  
-cases/paria/out_files/oil_concentration.nc
-cases/parameters/*
-cases/paria/out_files
-cases/paria/xp_files
-cases/paria/*.log
-cases/paria/bnc_files/dtmcst1.d
-cases/paria/detections
+testcase/paria/out_files/oil_concentration.nc
+testcase/parameters/*
+testcase/paria/out_files
+testcase/paria/xp_files
+testcase/paria/*.log
+testcase/paria/bnc_files/dtmcst1.d
+testcase/paria/detections
 # lebanon test case
-cases/lebanon/out_files/
-cases/lebanon/bnc_files/dtmcst1.d
-cases/lebanon/xp_files/
-cases/lebanon/*.log
-cases/lebanon/detections
-# Syria test case
-cases/syria/out_files/
-cases/syria/bnc_files/dtmcst1.d
-cases/syria/xp_files/
-cases/syria/bnc_files/
-cases/syria/oce_files/
-cases/syria/met_files/
-cases/syria/*.log
-cases/syria/detections
+testcase/lebanon/out_files/
+testcase/lebanon/bnc_files/dtmcst1.d
+testcase/lebanon/xp_files/
+testcase/lebanon/*.log
+testcase/lebanon/detections
+# END

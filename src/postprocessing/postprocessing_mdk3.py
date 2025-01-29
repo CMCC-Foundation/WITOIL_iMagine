@@ -1,13 +1,6 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
-
-from glob import glob
-
-
-import numpy as np
-import pandas as pd
-import xarray as xr
 import os
 from glob import glob
 
@@ -170,5 +163,5 @@ if __name__ == "__main__":
         12,
         150,
         False,
-        "/Users/francesco/shared/Medslik-II/cases/paria/out_files/",
+        "/Users/francesco/shared/Medslik-II/testcase/paria/out_files/",
     )

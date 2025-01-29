@@ -1,6 +1,7 @@
 shapely
 pyproj
 xarray
+folium
 geopandas
 pandas
 mpld3

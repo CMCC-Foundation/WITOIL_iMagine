@@ -1,0 +1,59 @@
+# NOTE: this config is provided as a TEMPLATE, it should be changed by the user before using it.
+[simulation_setup]
+    name = "algeria" # name of the simulation.
+    experiment_path = "testcase" # path where experiment folder should be placed. Can be whatever. Default is "./output"
+    sim_length = 36 # length of the simulation in HOURS
+    time_step = 1800 # Time step in SECONDS
+    advanced_parameters_path = "testcase/algeria/parameters_algeria.toml"
+    oil_tracer_grid_step = 150.0 # Grid step of the oil tracer grid in METERS
+[initial_conditions]
+    start_datetime = "2008-08-06T10" # start date of the simulation ("%y-%m-%dT%h")
+    spill_lat_deg = 38 # lat of oil spill (deg N)
+    spill_lat_min = 14.40 # lat of oil spill (minutes N)
+    spill_lon_deg = 5 # lon of oil spill (deg E)
+    spill_lon_min = 58.84 # lat of oil spill (minutes E)
+    spill_duration = 0 # duration of oil spill HOURS. = 0.0 for instantaneous release
+    spill_rate = 240.0 # spill rate TONS/HOUR
+    oil_api = 22.40 # API of the oil
+    contour_slick = true # set true in case of contour slick (also if contour should be read from shapefile)
+    slick_vertices = [[[38.2750,5.2645],[38.2942,5.5491],[38.2712,5.8559],[38.2994,5.5434]],
+                   [[38.2568,5.9367],[38.2022,6.0566],[38.1585,6.2115],[38.2175,6.0423]],
+                   [[38.1192,6.3190],[38.1341,6.3090],[38.1001,6.4237],[38.0886,6.4194]]
+                    ] 
+[download]
+    download_data = false # = true if data are not provided by the user
+    download_curr = false # = true : OCE data are downloaded from Copernicus Marine Service
+    download_wind = false # = true : MET data are downloaded from ECMWF ERA5 product
+    copernicus_user = "my_username"
+    copernicus_password = "my_password"
+    cds_token = "cds_token"
+[input_files]
+    set_domain = true
+    latitude = [37.5,38.5] # used if set_domain = true
+    longitude = [4.5,7.5] # used if set_domain = true
+    delta = 0.75 # domain length in degrees, centered at the release point
+                 # delta is used only if set_domain = false
+    preproc_path = false # path to preprocessed data. = false or "none" if preprocessing is used.
+                         # It will be used ONLY if preprocessing of BOTH dtm/metoce data is NOT performed.
+    [input_files.dtm]
+        bathymetry_path = "input_data/bathymetry/gebco/GEBCO_2024_sub_ice_topo.nc" # GEBCO 2023 bathymetry file
+        coastline_path = "input_data/coastline/gshhg/GSHHS_shp/f/GSHHS_f_L1.shp" # coastline shapefile gshhg
+    [input_files.metoce]
+        oce_data_path = "testcase/algeria/input_data/oce"
+        met_data_path = "testcase/algeria/input_data/met"
+    [input_files.shapefile]
+        shape_path = "none" # add "path/to/shapefile" in case you want to start from shapefile.
+        # set shape_path = false or "none" if you do NOT want to start from a shapefile
+[run_options]
+    preprocessing_metoce = true # MET/OCE data preprocessing
+    preprocessing_dtm = true # bathymetry and coastline preprocessing
+    run_model = true # run oil spill model
+    postprocessing = true # conversion from particles to concentration
+[plot_options]
+    plotting = true # = true if results should be plotted (it should be used only if postprocessing = true)
+    pyngl = false
+    # Domain for plotting
+    plot_lon = [4.5,7.5]
+    plot_lat = [37.5,38.5]
+    concentration_range = [0,5]
+    plot_step_hrs = 12

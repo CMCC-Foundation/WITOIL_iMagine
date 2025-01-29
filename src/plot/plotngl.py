@@ -370,6 +370,13 @@ if __name__ == "__main__":
     lon_max = float(sys.argv[8])
     lat_min = float(sys.argv[9])
     lat_max = float(sys.argv[10])
+    concentration_range = []
+    concentration_range.append(float(sys.argv[11]))
+    concentration_range.append(float(sys.argv[12]))
+    if concentration_range[0] == concentration_range[1] == 0.0:
+        concentration_range = None
+    oce_files = os.path.join(str(sys.argv[13]), "*.nc")
+    met_files = os.path.join(str(sys.argv[14]), "*.nc")
     # Release coordinates
     release_coords = [spill_lon, spill_lat]
     # read output netcdf in concentration
@@ -385,8 +392,8 @@ if __name__ == "__main__":
     inidate = pd.to_datetime(start_datetime) + pd.Timedelta(hours=plot_step)
     enddate = pd.to_datetime(inidate + pd.Timedelta(hours=sim_length))
     # opening currents netcdf
-    curr = xr.open_mfdataset(f"{root_directory}/oce_files/*.nc")
-    wind = xr.open_mfdataset(f"{root_directory}/met_files/*.nc")
+    curr = xr.open_mfdataset(oce_files)
+    wind = xr.open_mfdataset(met_files)
     # transpose dataset
     curr = curr.transpose("time", "lon", "lat", ...)
     wind = wind.transpose("time", "lon", "lat", ...)
@@ -453,7 +460,7 @@ if __name__ == "__main__":
         lon_max,
         lat_min,
         lat_max,
-        concentration_range=None,
+        concentration_range=concentration_range,
     )
     # Conversion to tons/km^2
     surf_concentration = ds_oil["concentration"].values * 1000

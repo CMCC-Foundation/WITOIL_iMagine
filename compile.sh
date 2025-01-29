@@ -14,6 +14,11 @@ echo "============================="
 echo " -- Compiling model ..."
 mkdir -p "$DIR_EXE"
 gfortran -I"$NETCDF/include"   -L"$NETCDF/lib"   "$DIR_SRC/simulation.for" -lnetcdf -lnetcdff -o "$DIR_EXE/simulation.exe"
+# ***********************************************
+# Compiling with enhanced warnings
+# Please, decomment the following line if needed
+# gfortran -g -fcheck=all -Wall -Wextra -I"$NETCDF/include" -L"$NETCDF/lib" "$DIR_SRC/simulation.for" -lnetcdf -lnetcdff -o "$DIR_EXE/simulation.exe"
+# ***********************************************
 # print message
 echo "============================="
 echo "END SUCCESSFULLY"

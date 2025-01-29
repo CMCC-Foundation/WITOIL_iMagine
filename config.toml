@@ -1,44 +1,52 @@
 # NOTE: this config is provided as a TEMPLATE, it should be changed by the user before using it.
-[simulation]
-    name = "syria_new" # name of the simulation.
-    experiment_path = "WITOIL_iMagine/cases/" # path where experiment folder should be placed
-    start_datetime = 2021-08-22T03:43:00 # start date of the simulation
-    sim_length = 24.0 # length of the simulation in HOURS
-    spill_lat = [35.25] # lat of oil spill (deg N)
-    spill_lon = [35.90] # lon of oil spill (deg E)
-    spill_duration = [0.0] # duration of oil spill HOURS. = 0.0 for instantaneous release
-    spill_rate = [27.78] # spill rate TONS/HOUR
-    slick_age = [0.0] # age of oil slick in HOURS
-    oil = [28] # either oil api (number) or name (string), e.g. ["Ragusa"]. Please, consider that name must be exact.
-    area_spill = false
-    area_vertex = false # comprehends thre levels of lists. 1st: all slicks. 2nd: individual slick. 3rd: Coordinates of each vertex in each individual slick
-    multiple_slick = false
-    advanced_parameters = false # if = true, user must provide parameters.toml file
-    advanced_parameters_path = "WITOIL_iMagine/src/parameters.toml" # this path shuld be provided only if "advanced_parameters" is = true
+[simulation_setup]
+    name = "my_experiment" # name of the simulation.
+    experiment_path = "./output" # path where experiment folder should be placed. Can be whatever. Default is "./output"
+    sim_length = 48 # length of the simulation in HOURS
+    time_step = 1800 # Time step in SECONDS
+    advanced_parameters_path = "src/parameters.toml" # path to parameters.toml file containing simulation parameters
+    oil_tracer_grid_step = 150.0 # Grid step of the oil tracer grid in METERS
+[initial_conditions]
+    start_datetime = "2017-04-24T13" # start date of the simulation ("%y-%m-%dT%h")
+    spill_lat_deg = 10.0 # lat of oil spill (deg N)
+    spill_lat_min = 48.644 # lat of oil spill (minutes N)
+    spill_lon_deg = -63.0 # lon of oil spill (deg E)
+    spill_lon_min = -32.980 # lat of oil spill (minutes E)
+    spill_duration = 120 # duration of oil spill HOURS. = 0.0 for instantaneous release
+    spill_rate = 1.5 # spill rate TONS/HOUR
+    oil_api = 28.0 # API of the oil
+    contour_slick = false # set true in case of contour slick (also if contour should be read from shapefile)
+    slick_vertices = [ # comprehends thre levels of lists. 1st: all slicks. 2nd: individual slick. 3rd: Coordinates of each vertex in each individual slick
+                    [[38.2750,5.2645],[38.2942,5.5491],[38.2712,5.8559],[38.2994,5.5434]],
+                    [[38.2568,5.9367],[38.2022,6.0566],[38.1585,6.2115],[38.2175,6.0423]]
+                    ]
 [download]
-    download_data = true # = true if data are not provided by the user
-    download_curr = true # = true : OCE data are downloaded from Copernicus Marine Service
-    download_wind = true # = true : MET data are downloaded from ECMWF ERA5 product
-    copernicus_user = "none"
-    copernicus_password = "none"
-    cds_token = "none"
+    download_data = false # = true if data are not provided by the user
+    download_curr = false # = true : OCE data are downloaded from Copernicus Marine Service
+    download_wind = false # = true : MET data are downloaded from ECMWF ERA5 product
+    copernicus_user = "my_username"
+    copernicus_password = "my_password"
+    cds_token = "cds_token"
 [input_files]
-    set_domain = false # If the user wants to set the domain for cropping/preprocessing input data
-    lat = [31, 38]
-    lon = [32, 37]
-    delta = [0.75] # default domain length in degrees (applied to both lon/lat), to download or crop data
-    # note: delta is used only if set_domain = false
+    set_domain = true
+    longitude = [-64,-62] # used if set_domain = true
+    latitude = [9, 11] # used if set_domain = true
+    delta = 0.75 # domain length in degrees, centered at the release point
+                 # delta is used only if set_domain = false
+    preproc_path = false # path where preprocessed data are (already) placed. = false or "none" if preprocessing should be used.
+                         # This key will be used ONLY if preprocessing of BOTH dtm/metoce data is NOT performed.
+    sol_extrap_method = "gradient" # Sea Over Land (SOL) extrapolation method. Supported are "gradient" or "average".
+    # sol_extrap_iterations = 5 # number of iterations of the Sea Over Land method (only applied if method = "average").
     [input_files.dtm]
-        bathymetry_path = "WITOIL_iMagine/data/gebco/GEBCO.nc"
-        coastline_path = "WITOIL_iMagine/data/gshhs/GSHHS_shp/f/GSHHS_f_L1.shp"
+        bathymetry_path = "input_data/bathymetry/gebco/GEBCO_2024_sub_ice_topo.nc" # GEBCO 2023 bathymetry file
+        coastline_path = "input_data/coastline/gshhg/GSHHS_shp/f/GSHHS_f_L1.shp" # coastline shapefile gshhg
     [input_files.metoce]
-        oce_data_path = false # to provide if dowload_curr = false
-        met_data_path = false # to provide if dowload_wind = false
+        oce_data_path = "path/to/oce/files" # to provide if dowload_curr = false
+        met_data_path = "path/to/met/files" # to provide if dowload_wind = false
     [input_files.shapefile]
-        shape_path = false # add "path/to/shapefile" in case you want to start from shapefile.
-        # set shape_path = false or "none" if you do not want to start from a shapefile
+        shape_path = "none" # add "path/to/shapefile" in case you want to start from shapefile.
+        # set shape_path = false or "none" if you do NOT want to start from a shapefile
 [run_options]
-    preprocessing = true # = false if no preprocessing at all should be performed
     preprocessing_metoce = true # MET/OCE data preprocessing
     preprocessing_dtm = true # bathymetry and coastline preprocessing
     run_model = true # run oil spill model
@@ -46,6 +54,10 @@
 [plot_options]
     plotting = true # = true if results should be plotted (it should be used only if postprocessing = true)
     pyngl = false
+    currents_plotting_method = "curly" # method for plotting current vectors. Supported are "curly" or "quiver"
+    plot_extrap_currents = true # If extrapolated currents should be plotted (only valid for "average" method)
     # Domain for plotting
-    plot_lon = [35.5,36.5] # [min lon, max lon]
-    plot_lat = [35,36] # [min lat, max lat]]
+    plot_lon = [-64.1,-63] # [min lon, max lon]
+    plot_lat = [10,11] # [min lat, max lat]
+    concentration_range = [] #concentration range [min, max] for plotting results. = [] if it should be computed automatically.
+    plot_step_hrs = 12 # plot step in hours

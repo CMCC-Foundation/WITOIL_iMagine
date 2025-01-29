@@ -1,12 +1,9 @@
 from netCDF4 import Dataset
-import sys, os
 import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
 import datetime
 
 # geo libs
-import xarray as xr
 import geopandas as gpd
 from shapely.geometry import Point
 from pyproj import CRS
@@ -14,14 +11,10 @@ from pyproj import CRS
 # numerical and plotting libs
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # system libs
-import time
-import subprocess
-import threading
-from glob import glob
 import multiprocessing
+import warnings
 
 
 class Utils:
@@ -62,41 +55,6 @@ class Utils:
         return grid_corners
 
     @staticmethod
-    def read_txt_config1(config: str, *keys: list[str]) -> tuple[float]:
-        """
-        Read config file
-        """
-        df = pd.read_csv(
-            config, delimiter="=", index_col=None, header=None, usecols=None
-        )
-        values = list()
-        for key in keys:
-            for val in df.values:
-                if val[0] == key:
-                    values.append(float(val[1][:7]))
-                    break
-        return tuple(values)
-
-    @staticmethod
-    def set_product(product_name: str) -> dict[NDArray]:
-        """
-        Set input and output reference hours based on product name.
-        """
-        if product_name == "mercator_daily":
-            output_ref_hours = {"start": 24, "end": 47}
-            input_ref_hours = [12, 36, 60]
-        elif product_name == "era5":
-            output_ref_hours = {"start": 0, "end": 23}
-            input_ref_hours = [0, 6, 12, 18, 24]
-        else:
-            raise ValueError("Invalid product name")
-            # Compute
-        output_hours = np.arange(output_ref_hours["start"], output_ref_hours["end"] + 1)
-        input_hours = np.array(input_ref_hours)
-        dict_hours = {"irh": input_hours, "orh": output_hours}
-        return dict_hours
-
-    @staticmethod
     def check_land(lon, lat, gshhg_path: str):
         """
         This script receives a lon and lat value and  checks if the position is within land or sea
@@ -120,19 +78,13 @@ class Utils:
     @staticmethod
     def validate_date(date):
         """
-        Convert a date in string format to datetime, checking if the date provided is valid
-
-        It also checks if date is in the future, blocking the user to procced
+        Convert a date in string format to datetime, checking if the date provided is valid.
         """
 
         try:
             dt = pd.to_datetime(date)
-            if dt > datetime.datetime.today():
-                dt = "Date provided is in the future. No data will be available"
-            if (datetime.datetime.today() - dt) < datetime.timedelta(days=5):
-                raise Warning('ERA5 data might not be available in case you need downloads')
-        except:
-            raise ValueError('Date not provided in correct format')
+        except Exception as e:
+            raise ValueError(f"Date not provided in correct format: {e}")
         return dt
 
     @staticmethod
@@ -145,7 +97,10 @@ class Utils:
 
     @staticmethod
     def write_cds(key):
-        with open("~.cdsapirc_test") as f:
+        """
+        Write cds file for downloading ECMWF data.
+        """
+        with open("~/.cdsapirc") as f:
             f.write("url: https://cds.climate.copernicus.eu/api/v2\n")
             f.write(f"key: {key}\n")
             f.write("verify: 0")
@@ -159,6 +114,10 @@ class Utils:
         Data has to be passed in hourly format and in netcdf format
         """
 
+        try:
+            ds = ds.rename({"latitude": "lat", "longitude": "lon"})
+        except:
+            pass
         # iterating at each hour to generate the .mrc files
         for i in range(0, len(ds.time)):
             # select the i time instant
@@ -175,7 +134,7 @@ class Utils:
                     raise ValueError(
                         "Datetime from the dataset in on an unknown format"
                     )
-            # transforms it from xarray datset to pandas dataframe to facilitate the processes of adjusting values
+            # transforms it from xarray dataset to pandas dataframe to facilitate the processes of adjusting values
             df = rec.to_dataframe().reset_index()
             df = df.fillna(0)
             df = df.drop(["time"], axis=1)
@@ -221,17 +180,22 @@ class Utils:
             # this code also makes sure that the file is written correctly even in the transition of months
             if dt.hour == 0:
                 hour = 24
-                day = (dt - datetime.timedelta(hours=1)).day
+                dt_prev = dt - datetime.timedelta(hours=1)  # Get the previous day
+                day = dt_prev.day
+                month = dt_prev.month
+                year = dt_prev.year
             else:
                 hour = dt.hour
                 day = dt.day
+                month = dt.month
+                year = dt.year
             # writing the current files
             with open(
-                f"{exp_folder}/oce_files/merc{dt.year-2000:02d}{dt.month:02d}{day:02d}{hour:02d}.mrc",
+                f"{exp_folder}/oce_files/merc{year-2000:02d}{month:02d}{day:02d}{hour:02d}.mrc",
                 "w",
             ) as f:
                 f.write(
-                    f"Ocean forecast data for {day:02d}/{dt.month:02d}/{dt.year} {hour:02d}:00\n"
+                    f"Ocean forecast data for {day:02d}/{month:02d}/{year} {hour:02d}:00\n"
                 )
                 f.write("Subregion of the Global Ocean:\n")
                 f.write(
@@ -245,7 +209,6 @@ class Utils:
                     f.write(
                         f"{row['lat']:<10.4f}    {row['lon']:<10.4f}    {row['SST']:<10.4f}     {row['u_srf']:<10.4f}    {row['v_srf']:<10.4f}     {row['u_10m']:<10.4f}    {row['v_10m']:<10.4f}     {row['u_30m']:<10.4f}    {row['v_30m']:<10.4f}     {row['u_120m']:<10.4f}    {row['v_120m']:<10.4f}\n"
                     )
-        print("Sea State variables written")
 
     @staticmethod
     def write_eri(ds, date, exp_folder=None):
@@ -255,6 +218,10 @@ class Utils:
         Data has to be passed in hourly format and in netcdf format
         """
 
+        try:
+            ds = ds.rename({"latitude": "lat", "longitude": "lon"})
+        except:
+            pass
         # iterating at each hour to generate the .eri files
         try:
             date1 = f"{date.year}-{date.month:02d}-{date.day:02d} 00:00"
@@ -412,18 +379,6 @@ class Utils:
         pool.close()  # Close the pool, no more tasks can be submitted
         pool.join()  # Wait for all worker processes to finish
 
-    @staticmethod
-    def run_process_gebco(gebco, grid, output_dir):
-        script_name = "scripts/pre_processing/preproc_gebco_mdk2.py"
-        # Run the external Python script as a subprocess
-        subprocess.run([f"{sys.executable}", script_name, gebco, grid, output_dir])
-
-    @staticmethod
-    def run_process_gshhs(gshhs, grid, output_dir):
-        script_name = "scripts/pre_processing/preproc_gshhs_mdk2.py"
-        # Run the external Python script as a subprocess
-        subprocess.run([f"{sys.executable}", script_name, gshhs, grid, output_dir])
-
     def rename_netcdf_variables_mdk3(ds):
         """
         Dictionary containing names with the possibility to rename
@@ -448,7 +403,8 @@ class Utils:
             "mesh2d_windx": "U10M",
             "v10": "V10M",
             "mesh2d_windy": "V10M",
-            "valid_time":"time","time_counter": "time",
+            "valid_time": "time",
+            "time_counter": "time",
         }
         # Rename variables only if they exist in the dataset
         for old_name, new_name in variables_to_rename.items():
@@ -456,7 +412,7 @@ class Utils:
                 ds = ds.rename({old_name: new_name})
 
         return ds
-    
+
     @staticmethod
     def oil_volume_shapefile(config, dens=0.922, thick=0.00001):
         """
@@ -495,15 +451,6 @@ class Utils:
 
 
 if __name__ == "__main__":
-    path = "config1.txt"
-    try:
-        values = Utils.read_txt_config1(path, "sim_length", "SIM_NAME", "lat_degree")
-    except ValueError:
-        pass
-    values = Utils.read_txt_config1(path, "sim_length", "lat_degree")
-    print(values)
-    print(Utils.set_product("era5"))
-    print(Utils.set_product("mercator_daily"))
     result = Utils.compute_domain(120, 33, 41, 35, 10)
     result2 = Utils.compute_domain(480, 33, 41, 35, 10)
     assert result2 == result

@@ -1,0 +1,43 @@
+# Model Parameters for Medslik-II Simulation
+[model_parameters]
+    stokes_drift = true             # true or false if Stokes drift is applied
+    drift_factor = 0.00            # Wind correction (Drift Factor)
+    drift_angle_zero_wind = 0.0              # Wind correction (Drift Angle at zero wind speed)
+    drift_angle = false            # false or true  variable Drift Angle: if drift angle reduces with wind speed
+    wind_speed_half_angle = 0.0              # Wind speed at which drift angle is halved
+    wind_speed_reduced = true               # false or true if effective wind speed is reduced
+    reduction_fraction = 2.0              # Reduction Fraction
+    smagorinsky_scheme = false               # false or true if Smagorinsky scheme is to be used for horiz diffus (only for forecast currents)
+    horizontal_diffusivity = 2.0              # Horizontal Diffusivity (if smagorinski not applied)
+    vertical_diffusivity_above_thermocline = 0.01             # Vertical Diffusivity above the thermocline
+    vertical_diffusivity_below_thermocline = 0.0001           # Vertical Diffusivity below the thermocline
+    depth_thermocline = 30.0             # Depth of the thermocline
+    no_parcels = 90000            # No of parcels used to model diffusion and dispersion
+    depth_levels = [10.0, 30.0, 120.0] # Depths (3) at which velocities are printed in the forecast files
+    surface_level = 0.0              # Depth level of water velocity used for slick convection - surface = 0
+[evaporation_parameters]
+    vapor_pressure_rate = 12.0             # Controls change in vapour pressure with evaporated fraction
+    evaporation_rate = 0.000033         # Controls overall evaporation rate
+    exp_wind_on_evaporation_rate = 0.78             # Exponent of wind speed in evaporation rate
+    effect_on_viscosity = 4.0              # Controls effect of evaporated fraction on oil viscosity
+[emulsification_parameters]
+    water_fraction_on_mousse_viscosity = 0.65             # Controls effect of water fraction on mousse viscosity
+    water_fraction_increase_rate = 0.0000016        # Controls rate of increase of water fraction
+    reciprocal_water_maximum_fraction = 1.333            # Reciprocal of maximum water fraction
+    water_frac_increase_with_api = true                # 1/0 if maximum water fraction does/does not increase with API
+[dispersion_parameters]
+    downward_diffusion_velocity = 0.001            # Downward diffusion velocity of small droplets (m/s)
+    dispersion_rate_waves = 0.000008         # Controls the rate of dispersion of all droplets by waves
+    fraction_droplets_critical = 50.0             # Controls the fraction of droplets below the critical size
+    dispersion_thin_slick = 2000.0            # Controls the dispersion from the thin slick (sheen)
+    rising_velocity_large = 0.08             # Rising velocity of large droplets (m/s)
+    rising_velocity_small = 0.0003           # Rising velocity of small droplets (m/s)
+    depth_wellmixed_layer = 0.5              # Depth of well-mixed surface layer (m)
+    water_oil_tension = 24.0             # Interfacial tension between oil and water
+[spreading_parameters]
+    rate_spreading_thin_slick = 1.0              # Controls rate of spreading of thin slick
+    rate_spreading_thick_slick = 150.0            # Controls rate of spreading of thick slick
+    rate_spreading_slick_thickness = 0.0015           # Controls dependence of spreading of thin slick on thickness
+[coastal_impact_parameters]
+    effect_on_probability_release = 10000.0           # Controls effect of existing loading on probability of release
+    api_effect = 0.0              # Controls effect of oil API on probability of release
