@@ -4,7 +4,7 @@ import copernicusmarine
 import argparse
 import os
 import subprocess
-import datetime
+from datetime import datetime
 import pandas as pd
 import xarray as xr
 

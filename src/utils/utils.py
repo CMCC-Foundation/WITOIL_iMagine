@@ -1,7 +1,7 @@
 from netCDF4 import Dataset
 import numpy as np
 import pandas as pd
-import datetime
+from datetime import datetime
 
 # geo libs
 import geopandas as gpd

@@ -1,6 +1,6 @@
 import numpy as np
 import pdb
-import datetime
+from datetime import datetime
 import os
 import cdsapi
 import argparse
