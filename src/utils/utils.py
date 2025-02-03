@@ -127,7 +127,7 @@ class Utils:
                 dt = pd.to_datetime(rec.time.values)
             except:
                 try:
-                    dt = datetime.datetime.strptime(
+                    dt = datetime.strptime(
                         str(rec.time.values), "%Y-%m-%d %H:%M:%S"
                     )
                 except:
@@ -231,7 +231,7 @@ class Utils:
             try:
                 dt = pd.to_datetime(met.time[0].values)
             except:
-                dt = datetime.datetime.strptime(
+                dt = datetime.strptime(
                     str(met.time[0].values), "%Y-%m-%d %H:%M:%S"
                 )
             df = met.to_dataframe().reset_index()
@@ -285,7 +285,7 @@ class Utils:
             dt = pd.to_datetime(rec.time.values)
         except:
             try:
-                dt = datetime.datetime.strptime(
+                dt = datetime.strptime(
                     str(rec.time.values), "%Y-%m-%d %H:%M:%S"
                 )
             except:

@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 # Create a file handler with overwrite mode ('w')
 # Get the current time
-current_time = datetime.datetime.now()
+current_time = datetime.now()
 # Format the time (e.g., Year-Month-Day_Hour-Minute-Second)
 time_str = current_time.strftime("%H%M%S_%f")[:-3]
 # Create the log file name with the timestamp
@@ -266,7 +266,7 @@ class MedslikII:
                 init["start_datetime"],
                 init["start_datetime"] + pd.Timedelta(days=n_days),
                 pd.Timedelta(days=1),
-            ).astype(datetime.datetime)
+            ).astype("datetime64[ns]")
             for date in date_array:
                 # Convert to 'yyMMdd' format
                 formatted_date = date.strftime("%y%m%d")
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     print(f"For further information, please check the log file: {logger.handlers}")
     # Logging first info
     logger.info("Starting Medslik-II oil spill simulation")
-    exec_start_time = datetime.datetime.now()
+    exec_start_time = datetime.now()
     logger.info(f"Execution starting at {exec_start_time}")
 
     # Config as argument
@@ -390,7 +390,7 @@ if __name__ == "__main__":
                 raise FileNotFoundError(f"Shapefile {shapefile_path} not found")
 
     # Log preproc exec time
-    preproc_end_time = datetime.datetime.now()
+    preproc_end_time = datetime.now()
     logger.info(
         f"Preprocessing execution time = {pd.Timedelta(preproc_end_time - exec_start_time)}"
     )
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         logger.info("Running Medslik-II simulation")
         main.run_medslik_sim()
         # Log simulation exec time
-        simulation_end_time = datetime.datetime.now()
+        simulation_end_time = datetime.now()
         logger.info(
             f"Simulation execution time = {pd.Timedelta(simulation_end_time - preproc_end_time)}"
         )
@@ -445,7 +445,7 @@ if __name__ == "__main__":
             resolution=resolution,
         )
         # Log postproc exec time
-        postproc_end_time = datetime.datetime.now()
+        postproc_end_time = datetime.now()
         logger.info(
             f"Postprocessing execution time = {pd.Timedelta(postproc_end_time - simulation_end_time)}"
         )
@@ -506,7 +506,7 @@ if __name__ == "__main__":
             pass
 
     # Log execution time
-    exec_end_time = datetime.datetime.now()
+    exec_end_time = datetime.now()
     total_exec_time = pd.Timedelta(exec_end_time - exec_start_time)
     logger.info(f"Execution ending at {exec_end_time}")
     logger.info(f"Total execution time = {total_exec_time}")
