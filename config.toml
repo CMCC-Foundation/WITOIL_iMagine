@@ -8,11 +8,7 @@
     spill_lon = [35.90] # lon of oil spill (deg E)
     spill_duration = [0.0] # duration of oil spill HOURS. = 0.0 for instantaneous release
     spill_rate = [27.78] # spill rate TONS/HOUR
-    slick_age = [0.0] # age of oil slick in HOURS
     oil = [28] # either oil api (number) or name (string), e.g. ["Ragusa"]. Please, consider that name must be exact.
-    area_spill = false
-    area_vertex = false # comprehends thre levels of lists. 1st: all slicks. 2nd: individual slick. 3rd: Coordinates of each vertex in each individual slick
-    multiple_slick = false
     advanced_parameters = false # if = true, user must provide parameters.toml file
     advanced_parameters_path = "WITOIL_iMagine/src/parameters.toml" # this path shuld be provided only if "advanced_parameters" is = true
 [download]
@@ -34,9 +30,6 @@
     [input_files.metoce]
         oce_data_path = false # to provide if dowload_curr = false
         met_data_path = false # to provide if dowload_wind = false
-    [input_files.shapefile]
-        shape_path = false # add "path/to/shapefile" in case you want to start from shapefile.
-        # set shape_path = false or "none" if you do not want to start from a shapefile
 [run_options]
     preprocessing = true # = false if no preprocessing at all should be performed
     preprocessing_metoce = true # MET/OCE data preprocessing

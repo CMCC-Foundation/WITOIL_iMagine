@@ -29,7 +29,7 @@ def write_cds(token):
 def get_era5(xmin,xmax,ymin,ymax,start_date,end_date,output_path,output_name):
     server = cdsapi.Client()
 
-    days = (end_date-start_date).days
+    days = (end_date-start_date).days + 1
 
     print(ymin,ymax,xmin,xmax)
 
