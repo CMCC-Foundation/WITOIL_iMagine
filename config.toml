@@ -30,9 +30,6 @@
     [input_files.metoce]
         oce_data_path = false # to provide if dowload_curr = false
         met_data_path = false # to provide if dowload_wind = false
-    [input_files.shapefile]
-        shape_path = false # add "path/to/shapefile" in case you want to start from shapefile.
-        # set shape_path = false or "none" if you do not want to start from a shapefile
 [run_options]
     preprocessing = true # = false if no preprocessing at all should be performed
     preprocessing_metoce = true # MET/OCE data preprocessing
