@@ -1,3 +1,4 @@
+#!/bin/bash
 # set folders
 DIR_EXE=.
 DIR_SRC=$DIR_EXE/MODEL_SRC
