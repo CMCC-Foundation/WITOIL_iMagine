@@ -365,10 +365,15 @@ class MedslikII:
                 shutil.copy(src, os.path.join(model_dir, "RUN", dest if "config" in dest else "MODEL_SRC"))
 
             # Compile and start running (replacing `cd` with `cwd`)
-            compile_script = "MODEL_SRC/compile.sh"
-            run_script = "RUN.sh"
-            subprocess.run(["sh", compile_script], check=True, cwd=os.path.join(model_dir, "RUN")) # nosec
-            subprocess.run(["./" + run_script], check=True, cwd=os.path.join(model_dir, "RUN")) # nosec
+            compile_script_path = os.path.abspath(os.path.join(model_dir, "RUN", "MODEL_SRC", "compile.sh"))
+            run_script_path = os.path.abspath(os.path.join(model_dir, "RUN", "RUN.sh"))
+            if not os.access(compile_script_path, os.X_OK):
+                os.chmod(compile_script_path, 0o755)
+
+            if not os.access(run_script_path, os.X_OK):
+                os.chmod(run_script_path, 0o755) 
+            subprocess.run([compile_script_path], check=True, cwd=os.path.join(model_dir, "RUN"))
+            subprocess.run([run_script_path], check=True, cwd=os.path.join(model_dir, "RUN"))
 
         else:
             # Handle separate slicks
@@ -389,10 +394,15 @@ class MedslikII:
                 shutil.copy(config1_path, os.path.join(model_dir, "RUN", "config1.txt"))
 
                 # Compile and start running
-                compile_script = "MODEL_SRC/compile.sh"
-                run_script = "RUN.sh"
-                subprocess.run(["sh", compile_script], check=True, cwd=os.path.join(model_dir, "RUN")) # nosec
-                subprocess.run(["./" + run_script], check=True, cwd=os.path.join(model_dir, "RUN")) # nosec
+                compile_script_path = os.path.abspath(os.path.join(model_dir, "RUN", "MODEL_SRC", "compile.sh"))
+                run_script_path = os.path.abspath(os.path.join(model_dir, "RUN", "RUN.sh"))
+                if not os.access(compile_script_path, os.X_OK):
+                    os.chmod(compile_script_path, 0o755)
+
+                if not os.access(run_script_path, os.X_OK):
+                    os.chmod(run_script_path, 0o755) 
+                subprocess.run([compile_script_path], check=True, cwd=os.path.join(model_dir, "RUN"))
+                subprocess.run([run_script_path], check=True, cwd=os.path.join(model_dir, "RUN"))
 
         # Copy output files (replacing `cp -r`)
         output_dest = os.path.join(simdir, simname, "out_files")
