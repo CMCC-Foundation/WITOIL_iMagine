@@ -330,6 +330,7 @@ class MedslikIIPlot:
                                 {plot_lat[0]} {plot_lat[1]}"
             ],
             # shell=True,
+            # shell=True,
             check=True,
         ) # nosec
 
