@@ -90,8 +90,11 @@ def download_copernicus(
             dataset_id_curr = "med-cmcc-cur-rean-h"
             dataset_id_temp = "med-cmcc-tem-rean-d"
             output_name = output_name.format("reanalysis")
-
             files = []
+
+            # Normalized date to be sure to get enough time slices of dataset
+            start_time = start_time.normalize()
+
             for dataset in [dataset_id_curr, dataset_id_temp]:
 
                 if "cur" in dataset:
@@ -111,10 +114,10 @@ def download_copernicus(
                     )
                     # Add depth dimension (0 m) to 2D dataset
                     ds = xr.open_dataset(f"{output_path}curr.nc")
-                    ds = ds.expand_dims(depth=[0])
+                    ds = ds.expand_dims(depth=[0, 10, 30, 120])
                     ds.to_netcdf(f"{output_path}curr.nc")
-
                     files.append(output_path + "curr.nc")
+
                 else:
                     copernicusmarine.subset(
                         dataset_id=dataset_id_temp,
@@ -132,7 +135,12 @@ def download_copernicus(
                         username=user,
                         password=password,
                     )
-
+                    ds_temp = xr.open_dataset(f"{output_path}temp.nc")
+                    ds_temp = ds_temp.sel(depth=[0, 10, 30, 120], method="nearest")
+                    ds_temp["depth"] = [0, 10, 30, 120]
+                    ds_temp = ds_temp.resample(time='1H').ffill()
+                    ds_temp = ds_temp.load() # Load the dataset into memory to release the file handle
+                    ds_temp.to_netcdf(f"{output_path}temp.nc")
                     files.append(output_path + "temp.nc")
 
             # Transform to medslik standards
@@ -140,12 +148,6 @@ def download_copernicus(
 
             # Rename variables only if they exist in the dataset
             ds = Utils.rename_netcdf_variables_mdk3(ds)
-
-            # Selecting only 4 layers
-            ds = ds.sel(depth=[0, 10, 30, 120], method="nearest")
-            
-            # Modifying labels to simplfy drop in temperature columns
-            ds["depth"] = [0, 10, 30, 120]
 
             # Selecting only the relavent variables
             ds = ds[["uo", "vo", "thetao"]]
@@ -164,7 +166,8 @@ def download_copernicus(
                 dataset_id_curr = "cmems_mod_med_phy-cur_anfc_4.2km-2D_PT1H-m"
                 dataset_id_temp = "cmems_mod_med_phy-tem_anfc_4.2km-2D_PT1H-m"
                 output_name = output_name.format("analysis")
-
+                # Normalized date to be sure to get enough time slices of dataset
+                start_time = start_time.normalize()
                 files = []
                 for dataset in [dataset_id_curr, dataset_id_temp]:
 
@@ -228,7 +231,8 @@ def download_copernicus(
                 dataset_id_curr = "cmems_mod_med_phy-cur_anfc_4.2km-3D_PT1H-m"
                 dataset_id_temp = "cmems_mod_med_phy-tem_anfc_4.2km-3D_PT1H-m"
                 output_name = output_name.format("analysis")
-
+                # Normalized date to be sure to get enough time slices of dataset
+                start_time = start_time.normalize()
                 files = []
                 for dataset in [dataset_id_curr, dataset_id_temp]:
 
