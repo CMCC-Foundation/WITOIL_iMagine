@@ -224,8 +224,10 @@ class MedslikIIPlot:
             ax1.set_title(
                 f"Surface Oil Concentration\n{current_time}", fontsize=18, pad=20
             )
-            ax1.set_xlabel(lon_label, fontsize=12)
-            ax1.set_ylabel(lat_label, fontsize=12)
+            ax1.set_xlabel(lon_label, fontsize=14)
+            ax1.set_ylabel(lat_label, fontsize=14)
+            ax1.tick_params(axis='both', which='major', labelsize=12)
+            ax1.tick_params(axis='both', which='minor', labelsize=12)
             ax1.set_xlim(lon_min, lon_max)
             ax1.set_ylim(lat_min, lat_max)
             plt.grid()
@@ -239,7 +241,7 @@ class MedslikIIPlot:
             cbar = plt.colorbar(
                 c, cax=cbar_ax, orientation="horizontal", ticks=extended_levels[:-1]
             )
-            cbar.set_label(r"tons km$^{-2}$", fontsize=14)
+            cbar.set_label(r"tons km$^{-2}$", fontsize=13)
 
             # Format the colorbar ticks
             cbar.ax.xaxis.set_major_formatter(FormatStrFormatter(format_string))
