@@ -44,6 +44,7 @@ class MedslikIIPlot:
         # read coasline
         land = gpd.read_file(self.config["input_files"]["dtm"]["coastline_path"])
 
+
         # read output netcdf in concentration
         ds_particles = xr.open_dataset(self.concentration_path)
 
@@ -58,20 +59,40 @@ class MedslikIIPlot:
         # opening currents netcdf
         curr = xr.open_mfdataset(f"{self.root_directory}/oce_files/*.nc")
 
+        # opening wind netcdf
+        wind = xr.open_mfdataset(f"{self.root_directory}/met_files/*.nc").transpose("time", "lon", "lat")
+
+        # gravity center
+        lon_gravity_center = ds_particles["lon_gravity_center"].values
+        lat_gravity_center = ds_particles["lat_gravity_center"].values
+
         # ensuring date index is correct
         try:
             curr["time"] = curr.indexes["time"].to_datetimeindex()
+            wind["time"] = wind.indexes["time"].to_datetimeindex()
         except (KeyError, AttributeError):
             pass
-
+        
+        # Resample current data to hourly intervals and interpolate
         curr = curr.resample(time="1h").interpolate("linear")
+
         # selecting simulation date
         curr = curr.sel(time=slice(inidate, enddate))
+        
+        # selecting surface current
         curr = curr.isel(depth=0)
 
-        # defining plot boundaries
-        # lon_min, lon_max = self.config["plot_options"]["plot_lon"]
-        # lat_min, lat_max = self.config["plot_options"]["plot_lat"]
+        # Resample wind data to hourly intervals and interpolate
+        wind = wind.resample(time="1h").interpolate("linear")
+
+        # Select wind data within the simulation time period
+        wind = wind.sel(time=slice(inidate, enddate))
+
+        # Check and correct longitude bounds
+        if lon_min > lon_max:
+            lon_min, lon_max = lon_max, lon_min
+        if lat_min > lat_max:
+            lat_min, lat_max = lat_max, lat_min
 
         # cropping coastline to area of interest
         rec = land.cx[lon_min:lon_max, lat_min:lat_max]
@@ -110,10 +131,35 @@ class MedslikIIPlot:
 
         # loop for ploting
         for t in range(0, len(ds_particles.time)):
-            
+
+            target_lon = lon_gravity_center[t]  # Replace with your target latitude
+            target_lat = lat_gravity_center[t]  # Replace with your target longitude
+
+            # From wind dataset find nearest lon/lat points to the gravity center
+            nearest_lon = wind.lon.sel(lon=target_lon, method="nearest")
+            nearest_lat = wind.lat.sel(lat=target_lat, method="nearest")
+
+            # Using nearest available lat/lon
+            subset_wind = wind.sel(lon=nearest_lon, lat=nearest_lat)
+
+            # Make sure that lon/lat are preserved as dimensions
+            subset_wind = subset_wind.expand_dims(["lat", "lon"])
+
             # select the iteration timestep
             ds_p = ds_particles.isel(time=t)
             plot_curr = curr.isel(time=t)
+            plot_wind = subset_wind.isel(time=t)
+
+            # Extract U10M and V10M values at the nearest position
+            u_wind_raw = plot_wind.sel(lon=nearest_lon, lat=nearest_lat).U10M.values
+            v_wind_raw = plot_wind.sel(lon=nearest_lon, lat=nearest_lat).V10M.values
+
+            # Check if the data is NaN
+            if np.isnan(u_wind_raw) or np.isnan(v_wind_raw):
+                print(
+                    f"plotting - NaN wind data found at timestep {t}. Skipping wind interpolation."
+                )
+                continue  # Skip interpolation if raw data is invalid
 
             fig = plt.figure(figsize=(10, 8))
             gs = plt.GridSpec(
@@ -211,6 +257,20 @@ class MedslikIIPlot:
                 markersize=14,
             )
 
+            # Add wind vector (quiver) at the gravity center
+            ax1.quiver(
+                target_lon,  # Plot at center of gravity
+                target_lat,  # Plot at center of gravity
+                u_wind_raw,  # Use wind from gravity center
+                v_wind_raw,  # Use wind from gravity center
+                scale=50,  # Adjust the scale of the wind vector
+                color="red",  # "#1f77b4"
+                zorder=2000,
+                width=0.003,  # Width of the arrow
+                headwidth=3,
+                headlength=4,
+            )
+
             current_time = (
                 inidate + pd.to_timedelta(ds_particles.time.values[t]) - pd.Timedelta(hours=1)
             ).strftime("%Y-%m-%d %H:%M")
@@ -224,10 +284,10 @@ class MedslikIIPlot:
             ax1.set_title(
                 f"Surface Oil Concentration\n{current_time}", fontsize=18, pad=20
             )
-            ax1.set_xlabel(lon_label, fontsize=14)
-            ax1.set_ylabel(lat_label, fontsize=14)
-            ax1.tick_params(axis='both', which='major', labelsize=12)
-            ax1.tick_params(axis='both', which='minor', labelsize=12)
+            ax1.set_xlabel(lon_label, fontsize=12)
+            ax1.set_ylabel(lat_label, fontsize=12)
+            ax1.tick_params(axis='both', which='major', labelsize=10)
+            ax1.tick_params(axis='both', which='minor', labelsize=10)
             ax1.set_xlim(lon_min, lon_max)
             ax1.set_ylim(lat_min, lat_max)
             plt.grid()
@@ -241,7 +301,7 @@ class MedslikIIPlot:
             cbar = plt.colorbar(
                 c, cax=cbar_ax, orientation="horizontal", ticks=extended_levels[:-1]
             )
-            cbar.set_label(r"tons km$^{-2}$", fontsize=13)
+            cbar.set_label(r"tons km$^{-2}$", fontsize=11)
 
             # Format the colorbar ticks
             cbar.ax.xaxis.set_major_formatter(FormatStrFormatter(format_string))
