@@ -8,6 +8,7 @@ import subprocess
 from glob import glob
 from numpy.typing import NDArray
 from datetime import datetime, timedelta, date
+import psutil
 
 from WITOIL_iMagine.src.utils.utils import Utils
 from WITOIL_iMagine.src.utils.config import Config
@@ -15,6 +16,18 @@ from WITOIL_iMagine.src.utils.config import Config
 import logging
 
 logger = logging.getLogger(__name__)
+
+def print_memory_debug(tag, obj=None):
+    process = psutil.Process()
+    mem_used = process.memory_info().rss / 1024**2  # MB
+    if obj is not None:
+        try:
+            size = obj.nbytes / 1024**2  # MB
+        except AttributeError:
+            size = sys.getsizeof(obj) / 1024**2
+        print(f"DEBUG [{tag}] - Used RAM: {mem_used:.2f} MB, Object size: {size:.2f} MB")
+    else:
+        print(f"DEBUG [{tag}] - Used RAM: {mem_used:.2f} MB")
 
 class PreProcessing:
     """
@@ -61,6 +74,7 @@ class PreProcessing:
         if glob(oce_path) == []:
             oce_path = f"{self.exp_folder}/oce_files/*.nc"
         concat = xr.open_mfdataset(oce_path, combine="nested", engine="netcdf4")
+        print_memory_debug("process_currents - concat", concat)
         concat = concat.drop_duplicates(dim="time", keep="last")
         if self.config["input_files"]["set_domain"]:
             concat = concat.sel(
@@ -68,6 +82,7 @@ class PreProcessing:
             )
         # Interpolating the values in time, transforming it from daily to hourly values
         concat = concat.resample(time="1h").interpolate("linear")
+        print_memory_debug("process_currents - after resample", concat)
         Utils.write_mrc(concat, exp_folder=self.exp_folder)
         self._copy_nc_files(oce_path, f"{self.exp_folder}/oce_files/")
         print("DEBUG: process_currents() completed")
@@ -82,9 +97,11 @@ class PreProcessing:
         if glob(met_path) == []:
             met_path = f"{self.exp_folder}/met_files/*.nc"
         concat = xr.open_mfdataset(met_path, combine="nested", engine="netcdf4")
+        print_memory_debug("process_winds - concat", concat)
         concat = concat.drop_duplicates(dim="time", keep="first")
         # Interpolating the values in time, transforming it from daily to hourly values
         concat = concat.resample(time="1h").interpolate("linear")
+        print_memory_debug("process_winds - after resample", concat)
         # Handle longitude and latitude
         concat["lon"] = xr.where(
             concat["lon"] > 180, concat["lon"] - 360, concat["lon"]
@@ -125,6 +142,7 @@ class PreProcessing:
 
         # interpolation on medslik grid
         med = gebco.interp(lon=grid.lon.values.tolist(),lat=grid.lat.values.tolist())
+        print_memory_debug("process_bathymetry - interpolated gebco", med)
         print("DEBUG: bathymetry memory usage (MB):", med.nbytes / 1e6)
         print("DEBUG: GEBCO dimensions:", gebco.sizes)
         print("DEBUG: interpolated med dimensions:", med.sizes)
@@ -146,6 +164,8 @@ class PreProcessing:
         mdk_z = np.array(mdk_z)
         land_mask = np.where(mdk_z <= 0)
         mdk_z[land_mask]=9999
+        print_memory_debug("process_bathymetry - mdk_z array", mdk_z)
+
 
         BathFile=open(f'{self.exp_folder}/bnc_files/dtm.bath', "w")
         BathFile.write("MEDSLIK-II compatible bathymetry file. Degraded resolution based on GEBCO 30''\n")
@@ -175,6 +195,7 @@ class PreProcessing:
         ymax = grid.lat.max() + buffer
 
         shp = gpd.read_file(gshhs)
+        print_memory_debug("process_coastline - gshhs read", shp)
 
         # Cropping to a smaller area
         shp = shp.cx[xmin:xmax, ymin:ymax]
@@ -268,6 +289,7 @@ class PreProcessing:
         s_num=None,
     ):
         print("DEBUG: write_config_files() called")
+        print_memory_debug("before write_config_files")
         print(f"       simname={spill_dictionary['simname']}, separate_slicks={separate_slicks}, s_num={s_num}")
         # obtaining the variables
         simname = spill_dictionary["simname"]
