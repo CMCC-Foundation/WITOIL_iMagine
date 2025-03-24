@@ -351,7 +351,6 @@ class PreProcessing:
         Utils.search_and_replace(config_file, "SRATE", f"{spill_rate:08.2f}")
         # oil characteristics
         print("DEBUG: Replacing oil type")
-        print(f"       OIL={self.config['input_files']['oil']['type']}, OIL_TYPE={self.config['input_files']['oil']['value']}")
         Utils.search_and_replace(config_file, "APIOT", f"{oil_api}")
         # number of slicks
         Utils.search_and_replace(config_file, "N_SLICK", f"{number_slick}")
