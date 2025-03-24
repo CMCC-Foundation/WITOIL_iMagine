@@ -8,6 +8,7 @@ import subprocess
 from glob import glob
 from numpy.typing import NDArray
 from datetime import datetime, timedelta, date
+import psutil
 
 from WITOIL_iMagine.src.utils.utils import Utils
 from WITOIL_iMagine.src.utils.config import Config
@@ -15,6 +16,18 @@ from WITOIL_iMagine.src.utils.config import Config
 import logging
 
 logger = logging.getLogger(__name__)
+
+def print_memory_debug(tag, obj=None):
+    process = psutil.Process()
+    mem_used = process.memory_info().rss / 1024**2  # MB
+    if obj is not None:
+        try:
+            size = obj.nbytes / 1024**2  # MB
+        except AttributeError:
+            size = sys.getsizeof(obj) / 1024**2
+        print(f"DEBUG [{tag}] - Used RAM: {mem_used:.2f} MB, Object size: {size:.2f} MB")
+    else:
+        print(f"DEBUG [{tag}] - Used RAM: {mem_used:.2f} MB")
 
 class PreProcessing:
     """
@@ -61,6 +74,7 @@ class PreProcessing:
         if glob(oce_path) == []:
             oce_path = f"{self.exp_folder}/oce_files/*.nc"
         concat = xr.open_mfdataset(oce_path, combine="nested", engine="netcdf4")
+        print_memory_debug("process_currents - concat", concat)
         concat = concat.drop_duplicates(dim="time", keep="last")
         if self.config["input_files"]["set_domain"]:
             concat = concat.sel(
@@ -68,6 +82,7 @@ class PreProcessing:
             )
         # Interpolating the values in time, transforming it from daily to hourly values
         concat = concat.resample(time="1h").interpolate("linear")
+        print_memory_debug("process_currents - after resample", concat)
         Utils.write_mrc(concat, exp_folder=self.exp_folder)
         self._copy_nc_files(oce_path, f"{self.exp_folder}/oce_files/")
         print("DEBUG: process_currents() completed")
@@ -82,9 +97,11 @@ class PreProcessing:
         if glob(met_path) == []:
             met_path = f"{self.exp_folder}/met_files/*.nc"
         concat = xr.open_mfdataset(met_path, combine="nested", engine="netcdf4")
+        print_memory_debug("process_winds - concat", concat)
         concat = concat.drop_duplicates(dim="time", keep="first")
         # Interpolating the values in time, transforming it from daily to hourly values
         concat = concat.resample(time="1h").interpolate("linear")
+        print_memory_debug("process_winds - after resample", concat)
         # Handle longitude and latitude
         concat["lon"] = xr.where(
             concat["lon"] > 180, concat["lon"] - 360, concat["lon"]
@@ -125,6 +142,10 @@ class PreProcessing:
 
         # interpolation on medslik grid
         med = gebco.interp(lon=grid.lon.values.tolist(),lat=grid.lat.values.tolist())
+        print_memory_debug("process_bathymetry - interpolated gebco", med)
+        print("DEBUG: bathymetry memory usage (MB):", med.nbytes / 1e6)
+        print("DEBUG: GEBCO dimensions:", gebco.sizes)
+        print("DEBUG: interpolated med dimensions:", med.sizes)
         #converting from begative depths to positive
         med['elevation'] = med.elevation *-1
         #filling nan to -9999 as expected by medslik
@@ -143,6 +164,8 @@ class PreProcessing:
         mdk_z = np.array(mdk_z)
         land_mask = np.where(mdk_z <= 0)
         mdk_z[land_mask]=9999
+        print_memory_debug("process_bathymetry - mdk_z array", mdk_z)
+
 
         BathFile=open(f'{self.exp_folder}/bnc_files/dtm.bath', "w")
         BathFile.write("MEDSLIK-II compatible bathymetry file. Degraded resolution based on GEBCO 30''\n")
@@ -172,6 +195,7 @@ class PreProcessing:
         ymax = grid.lat.max() + buffer
 
         shp = gpd.read_file(gshhs)
+        print_memory_debug("process_coastline - gshhs read", shp)
 
         # Cropping to a smaller area
         shp = shp.cx[xmin:xmax, ymin:ymax]
@@ -264,7 +288,9 @@ class PreProcessing:
         separate_slicks=False,
         s_num=None,
     ):
-
+        print("DEBUG: write_config_files() called")
+        print_memory_debug("before write_config_files")
+        print(f"       simname={spill_dictionary['simname']}, separate_slicks={separate_slicks}, s_num={s_num}")
         # obtaining the variables
         simname = spill_dictionary["simname"]
         dt_sim = spill_dictionary["dt_sim"]
@@ -287,25 +313,30 @@ class PreProcessing:
         else:
             config_file = f"WITOIL_iMagine/cases/{simname}/xp_files/slick{s_num+1}/config1.txt"
         # Refactored: Copy the template file
+        print(f"DEBUG: Copying config1 template to {config_file}")
         source_file = "WITOIL_iMagine/src/templates/config1_template_0.txt"
         shutil.copy(source_file, config_file)
         # adding spill Name - Add slick number if separate slicks
         if separate_slicks == False:
+            print("DEBUG: Replacing run name")
             Utils.search_and_replace(config_file, "RUNNAME", simname)
         else:
             Utils.search_and_replace(config_file, "RUNNAME", simname + f"_slick{s_num+1}")
         # adding spill date and hour information
+        print("DEBUG: Replacing datetime info")
         Utils.search_and_replace(config_file, "DD", f"{dt_sim.day:02d}")
         Utils.search_and_replace(config_file, "MM", f"{dt_sim.month:02d}")
         Utils.search_and_replace(config_file, "YY", f"{dt_sim.year-2000:02d}")
         Utils.search_and_replace(config_file, "c_Hour", f"{dt_sim.hour:02d}")
         Utils.search_and_replace(config_file, "c_minute", f"{dt_sim.minute:02d}")
         # adding simulation length
+        print("DEBUG: Replacing simulation length")
         Utils.search_and_replace(config_file, "SIMLENGTH", f"{sim_length:04d}")
         #  adding spill coordinates - dd for degrees and mm for minutes
         # Latitude
         dd = int(latitude)
         mm = (float(latitude) - dd) * 60
+        print("DEBUG: Replacing coordinates")
         Utils.search_and_replace(config_file, "LATd", f"{dd:02d}")
         Utils.search_and_replace(config_file, "LATm", f"{mm:.3f}")
         # Longitude
@@ -314,10 +345,13 @@ class PreProcessing:
         Utils.search_and_replace(config_file, "LONd", f"{dd:02d}")
         Utils.search_and_replace(config_file, "LONm", f"{mm:.3f}")
         # spill duration
+        print("DEBUG: Replacing spill duration and rate")
         Utils.search_and_replace(config_file, "SDUR", f"{spill_duration:04d}")
         # spill volume
         Utils.search_and_replace(config_file, "SRATE", f"{spill_rate:08.2f}")
         # oil characteristics
+        print("DEBUG: Replacing oil type")
+        print(f"       OIL={self.config['input_files']['oil']['type']}, OIL_TYPE={self.config['input_files']['oil']['value']}")
         Utils.search_and_replace(config_file, "APIOT", f"{oil_api}")
         # number of slicks
         Utils.search_and_replace(config_file, "N_SLICK", f"{number_slick}")
@@ -342,7 +376,7 @@ class PreProcessing:
             slik = "NO"
         # Writing that will use slick countor
         Utils.search_and_replace(config_file, "SSLICK", f"{slik}")
-        print("DEBUG: config1.txt written")
+        print("DEBUG: write_config_files() finished")
 
 if __name__ == "__main__":
     
