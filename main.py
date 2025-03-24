@@ -367,8 +367,13 @@ class MedslikII:
             # Compile and start running (replacing `cd` with `cwd`)
             compile_script_path = os.path.abspath(os.path.join(model_dir, "RUN", "MODEL_SRC", "compile.sh"))
             run_script_path = os.path.abspath(os.path.join(model_dir, "RUN", "RUN.sh"))
+            print("DEBUG: Starting Fortran compilation")
             subprocess.run([compile_script_path], check=True, cwd=os.path.join(model_dir, "RUN")) # nosec
+            print("DEBUG: Fortran compilation finished")
+            print("DEBUG: Starting Medslik-II simulation")
             subprocess.run([run_script_path], check=True, cwd=os.path.join(model_dir, "RUN")) # nosec
+            print("DEBUG: Medslik-II simulation finished")
+
 
         else:
             # Handle separate slicks

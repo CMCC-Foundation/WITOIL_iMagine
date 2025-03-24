@@ -70,6 +70,7 @@ class PreProcessing:
         concat = concat.resample(time="1h").interpolate("linear")
         Utils.write_mrc(concat, exp_folder=self.exp_folder)
         self._copy_nc_files(oce_path, f"{self.exp_folder}/oce_files/")
+        print("DEBUG: process_currents() completed")
     
     def process_winds(self, met_path: str = None):
 
@@ -95,6 +96,7 @@ class PreProcessing:
             # Call write eri function located in medslik.utils file
             Utils.write_eri(concat, date, exp_folder=self.exp_folder)
         self._copy_nc_files(met_path, f"{self.exp_folder}/met_files/")
+        print("DEBUG: process_winds() completed")
 
     def _copy_nc_files(self, src_files: str, dst_dir: str) -> None:
         # Use glob to find all .nc files in the source directory
@@ -231,6 +233,7 @@ class PreProcessing:
 
         # Replacing NMAX in medslik Fortran with a Python function
         Utils.search_and_replace(med_for, 'NMAX', str(nmax))
+        print("DEBUG: medslik_II.for ready")
 
     def configuration_parameters(self):
 
@@ -339,6 +342,7 @@ class PreProcessing:
             slik = "NO"
         # Writing that will use slick countor
         Utils.search_and_replace(config_file, "SSLICK", f"{slik}")
+        print("DEBUG: config1.txt written")
 
 if __name__ == "__main__":
     

@@ -246,6 +246,8 @@ class Utils:
                         f"{row['lat']:<10.4f}    {row['lon']:<10.4f}    {row['SST']:<10.4f}     {row['u_srf']:<10.4f}    {row['v_srf']:<10.4f}     {row['u_10m']:<10.4f}    {row['v_10m']:<10.4f}     {row['u_30m']:<10.4f}    {row['v_30m']:<10.4f}     {row['u_120m']:<10.4f}    {row['v_120m']:<10.4f}\n"
                     )
         print("Sea State variables written")
+        print("DEBUG: Finished writing all .mrc files")
+
 
     @staticmethod
     def write_eri(ds, date, exp_folder=None):
