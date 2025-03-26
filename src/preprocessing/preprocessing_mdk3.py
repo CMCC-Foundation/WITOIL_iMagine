@@ -130,15 +130,20 @@ class PreProcessing:
     def process_bathymetry(self,gebco):
 
         grid = self.grid
-        gebco = xr.open_dataset(gebco)
+        
+        if gebco is None or not gebco:
+            bnc_path = f"{self.exp_folder}/bnc_files/*.nc"
+        else:
+            bnc_path = gebco
 
-        if 'nav_lat' in grid and 'nav_lon' in grid:
-            grid = grid.rename({'nav_lat': 'lat', 'nav_lon': 'lon'})
-
-        # try:
-        #     grid = grid.rename({'nav_lat':'lat','nav_lon':'lon'})
-        # except:
-        #     pass
+        # Use open_mfdataset with the netcdf4 engine (instead of open_dataset)
+        gebco = xr.open_mfdataset(bnc_path, engine="netcdf4")
+        
+        # --- NEW: Rename variables if they are 'latitude'/'longitude'
+        try:
+            gebco = gebco.rename({"latitude": "lat", "longitude": "lon"})
+        except Exception:
+            pass
 
         # interpolation on medslik grid
         med = gebco.interp(lon=grid.lon.values.tolist(),lat=grid.lat.values.tolist())

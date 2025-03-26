@@ -13,6 +13,7 @@
     advanced_parameters_path = "WITOIL_iMagine/src/parameters.toml" # this path shuld be provided only if "advanced_parameters" is = true
 [download]
     download_data = true # = true if data are not provided by the user
+    download_bath = true # = true if user wants to crop gebco from ERDDAP
     download_curr = true # = true : OCE data are downloaded from Copernicus Marine Service
     download_wind = true # = true : MET data are downloaded from ECMWF ERA5 product
     copernicus_user = "none"
@@ -25,7 +26,7 @@
     delta = [0.75] # default domain length in degrees (applied to both lon/lat), to download or crop data
     # note: delta is used only if set_domain = false
     [input_files.dtm]
-        bathymetry_path = "WITOIL_iMagine/data/gebco/GEBCO.nc"
+        bathymetry_path = false
         coastline_path = "WITOIL_iMagine/data/gshhs/GSHHS_shp/f/GSHHS_f_L1.shp"
     [input_files.metoce]
         oce_data_path = false # to provide if dowload_curr = false
