@@ -97,8 +97,28 @@ class MedslikIIPlot:
         # cropping coastline to area of interest
         rec = land.cx[lon_min:lon_max, lat_min:lat_max]
 
-        # selecting simulation domain
-        curr = curr.sel(lon=slice(lon_min, lon_max), lat=slice(lat_min, lat_max))
+        # Get the full coordinate arrays from the dataset
+        lon_arr = curr.lon.values
+        lat_arr = curr.lat.values
+
+        # Find indices for the outward slice
+        # For the lower bound - the grid value that is <= the lon_min or lat_min.
+        i_min = np.searchsorted(lon_arr, lon_min, side="right") - 1
+        j_min = np.searchsorted(lat_arr, lat_min, side="right") - 1
+
+        # For the upper bound - the grid value that is >= the lon_max or lat_max.
+        i_max = np.searchsorted(lon_arr, lon_max, side="left")
+        j_max = np.searchsorted(lat_arr, lat_max, side="left")
+
+        # Make sure indices are within bounds
+        i_min = max(i_min, 0)
+        j_min = max(j_min, 0)
+        i_max = min(i_max, len(lon_arr) - 1)
+        j_max = min(j_max, len(lat_arr) - 1)
+
+        ### Subset the current data to the plot boundaries ###
+        # Slice the dataset using these indices
+        curr = curr.isel(lon=slice(i_min, i_max + 1), lat=slice(j_min, j_max + 1))
 
         min_concentration = 0.0
         max_concentration = (ds_particles.concentration * 1000).max().values
@@ -782,9 +802,9 @@ class Grid:
         self.width = x[-1] - x[0]
         self.height = y[-1] - y[0]
 
-        if not np.allclose(np.diff(x), self.width / (self.nx - 1), atol=1e-5):
+        if not np.allclose(np.diff(x), self.width / (self.nx - 1), atol=1e-4):
             raise ValueError("'x' values must be equally spaced")
-        if not np.allclose(np.diff(y), self.height / (self.ny - 1), atol=1e-5):
+        if not np.allclose(np.diff(y), self.height / (self.ny - 1), atol=1e-4):
             raise ValueError("'y' values must be equally spaced")
 
     @property

@@ -159,6 +159,28 @@ class MedslikII:
         else:
             down = "global"
 
+        if config["download"]["download_bath"]:
+            output_path = "data/gebco/"
+            output_name = output_path + "GEBCO_slice_{}_{}_mdk.nc".format(
+                identifier, config["simulation"]["name"]
+            )
+            logger.info("Obtaining GEBCO bathymetry from ERDDAP")
+            gebco_errdap(            
+                lat_min,
+                lat_max,
+                lon_min,
+                lon_max,
+                output_name=output_name
+            )
+            # Copy downloaded GEBCO file(s) to the bnc_files directory
+            source_files = gg(f"{output_path}*{identifier}*{config['simulation']['name']}*.nc")
+            destination = os.path.join(root_directory, "bnc_files")
+            for file in source_files:
+                shutil.copy(file, destination)
+            # Remove the temporary GEBCO files from the output path
+            for file in source_files:
+                os.remove(file)
+
         if config["download"]["download_curr"]:
 
             output_path = "data/COPERNICUS/"
