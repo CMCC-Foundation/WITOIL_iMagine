@@ -140,10 +140,10 @@ class PreProcessing:
         gebco = xr.open_mfdataset(bnc_path, engine="netcdf4")
         
         # --- NEW: Rename variables if they are 'latitude'/'longitude'
-        try:
+        # Rename variables if they exist in the dataset
+        if (("latitude" in gebco.coords or "latitude" in gebco.data_vars) and 
+            ("longitude" in gebco.coords or "longitude" in gebco.data_vars)):
             gebco = gebco.rename({"latitude": "lat", "longitude": "lon"})
-        except Exception:
-            pass
 
         # interpolation on medslik grid
         med = gebco.interp(lon=grid.lon.values.tolist(),lat=grid.lat.values.tolist())
