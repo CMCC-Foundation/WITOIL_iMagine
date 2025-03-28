@@ -149,68 +149,58 @@ class MedslikIIPlot:
             magnitude - 1
         )
 
-        # loop for ploting
-        for t in range(0, len(ds_particles.time)):
+        # Use only the last time step
+        t = len(ds_particles.time) - 1
 
-            target_lon = lon_gravity_center[t]  # Replace with your target latitude
-            target_lat = lat_gravity_center[t]  # Replace with your target longitude
+        target_lon = lon_gravity_center[t]  # Replace with your target longitude
+        target_lat = lat_gravity_center[t]   # Replace with your target latitude
 
-            # From wind dataset find nearest lon/lat points to the gravity center
-            nearest_lon = wind.lon.sel(lon=target_lon, method="nearest")
-            nearest_lat = wind.lat.sel(lat=target_lat, method="nearest")
+        # From wind dataset find nearest lon/lat points to the gravity center
+        nearest_lon = wind.lon.sel(lon=target_lon, method="nearest")
+        nearest_lat = wind.lat.sel(lat=target_lat, method="nearest")
 
-            # Using nearest available lat/lon
-            subset_wind = wind.sel(lon=nearest_lon, lat=nearest_lat)
+        # Using nearest available lat/lon
+        subset_wind = wind.sel(lon=nearest_lon, lat=nearest_lat)
+        subset_wind = subset_wind.expand_dims(["lat", "lon"])  # Ensure lon/lat dimensions
 
-            # Make sure that lon/lat are preserved as dimensions
-            subset_wind = subset_wind.expand_dims(["lat", "lon"])
+        # Select the iteration timestep for particles, currents, and wind
+        ds_p = ds_particles.isel(time=t)
+        plot_curr = curr.isel(time=t)
+        plot_wind = subset_wind.isel(time=t)
 
-            # select the iteration timestep
-            ds_p = ds_particles.isel(time=t)
-            plot_curr = curr.isel(time=t)
-            plot_wind = subset_wind.isel(time=t)
+        # Extract U10M and V10M values at the nearest position
+        u_wind_raw = plot_wind.sel(lon=nearest_lon, lat=nearest_lat).U10M.values
+        v_wind_raw = plot_wind.sel(lon=nearest_lon, lat=nearest_lat).V10M.values
 
-            # Extract U10M and V10M values at the nearest position
-            u_wind_raw = plot_wind.sel(lon=nearest_lon, lat=nearest_lat).U10M.values
-            v_wind_raw = plot_wind.sel(lon=nearest_lon, lat=nearest_lat).V10M.values
-
-            # Check if the data is NaN
-            if np.isnan(u_wind_raw) or np.isnan(v_wind_raw):
-                print(
-                    f"plotting - NaN wind data found at timestep {t}. Skipping wind interpolation."
-                )
-                continue  # Skip interpolation if raw data is invalid
-
-            fig = plt.figure(figsize=(10, 8))
-            gs = plt.GridSpec(
-                3, 1, height_ratios=[20, 0.3, 1], width_ratios=[1]
+        # Check if the data is NaN
+        if np.isnan(u_wind_raw) or np.isnan(v_wind_raw):
+            print(
+                f"plotting - NaN wind data found at timestep {t}. Skipping wind interpolation."
             )
+        else:
+            fig = plt.figure(figsize=(10, 8))
+            gs = plt.GridSpec(3, 1, height_ratios=[20, 0.3, 1], width_ratios=[1])
             ax1 = fig.add_subplot(gs[0, :])
             ax1.set_facecolor("white")
 
-            # Ploting coastline
+            # Plot coastline
             rec.plot(ax=ax1, color="#FFFDD0", edgecolor="black", zorder=1000, aspect=1)
 
             colors = [
-                (0, 0, 1),  # Blue
-                (0, 1, 1),  # Aqua
-                (0, 1, 0),  # Green
-                (1, 1, 0),  # Yellow
+                (0, 0, 1),    # Blue
+                (0, 1, 1),    # Aqua
+                (0, 1, 0),    # Green
+                (1, 1, 0),    # Yellow
                 (1, 0.5, 0),  # Orange
-                (1, 0, 0),  # Red
-                (0.5, 0, 0.5),  # Violet
+                (1, 0, 0),    # Red
+                (0.5, 0, 0.5) # Violet
             ]
-
             colors.append((0.5, 0, 0.5))  # Violet for the final section
             cmap_name = "custom_BlAqGrYeOrReVi"
             custom_cmap = LinearSegmentedColormap.from_list(cmap_name, colors, N=200)            
 
-            # ploting concentration (conversion to tons/km^2)
-            ds_c1 = xr.where(
-                ds_p.concentration * 1000 > 0.001, ds_p.concentration * 1000, np.nan
-            )
-            # ds_c1.plot(ax=ax, cbar_kwargs={"label": r"Concentration (tons $km^{-2}$)"})
-            
+            # Plot concentration (converted to tons/km^2)
+            ds_c1 = xr.where(ds_p.concentration * 1000 > 0.001, ds_p.concentration * 1000, np.nan)
             c = ds_c1.plot(
                 ax=ax1,
                 levels=extended_levels,
@@ -221,40 +211,81 @@ class MedslikIIPlot:
                 extend="max",
             )
 
-            # regularly spaced grid spanning the domain of x and y
-            xi = np.linspace(
-                plot_curr.lon.values.min(),
-                plot_curr.lon.values.max(),
-                plot_curr.lon.values.shape[0],
-            )
-            yi = np.linspace(
-                plot_curr.lat.values.min(),
-                plot_curr.lat.values.max(),
-                plot_curr.lat.values.shape[0],
-            )
-
-            # bicubic interpolation
+            # Create a regularly spaced grid
+            xi = np.linspace(plot_curr.lon.values.min(), plot_curr.lon.values.max(), plot_curr.lon.values.shape[0])
+            yi = np.linspace(plot_curr.lat.values.min(), plot_curr.lat.values.max(), plot_curr.lat.values.shape[0])
             x, y = np.meshgrid(xi, yi, indexing="xy", sparse=False)
 
-            # Vector components
+            # Vector components for currents
             u = plot_curr.uo.values
             v = plot_curr.vo.values
-
             velovect(
                 ax1,
                 x,
                 y,
                 u,
                 v,
-                density=3,  # Adjust for density of vectors
-                linewidth=0.6,  # Adjust for vector line width
-                color="black",  # Single color or array for multicolor
-                arrowsize=0.6,  # Adjust arrow size
+                density=3,
+                linewidth=0.6,
+                color="black",
+                arrowsize=0.6,
                 grains=16,
-                # integration_direction='forward',
-                broken_streamlines=True,  # Allow streamlines to break
+                broken_streamlines=True,
                 zorder=1500,
             )
+
+            # Plot the release point or center of mass
+            ax1.plot(
+                self.config["simulation"]["spill_lon"],
+                self.config["simulation"]["spill_lat"],
+                marker="+",
+                color="black",
+                markersize=14,
+            )
+
+            # Add wind vector at the gravity center
+            ax1.quiver(
+                target_lon,
+                target_lat,
+                u_wind_raw,
+                v_wind_raw,
+                scale=50,
+                color="red",
+                zorder=2000,
+                width=0.003,
+                headwidth=3,
+                headlength=4,
+            )
+
+            current_time = (
+                inidate + pd.to_timedelta(ds_particles.time.values[t]) - pd.Timedelta(hours=1)
+            ).strftime("%Y-%m-%d %H:%M")
+
+            plt.xlim(lon_min, lon_max)
+            plt.ylim(lat_min, lat_max)
+            lon_label = "Longitude (°E)" if lon_min >= 0 else "Longitude (°W)"
+            lat_label = "Latitude (°N)" if lat_min >= 0 else "Latitude (°S)"
+            ax1.set_title(f"Surface Oil Concentration\n{current_time}", fontsize=18, pad=20)
+            ax1.set_xlabel(lon_label, fontsize=12)
+            ax1.set_ylabel(lat_label, fontsize=12)
+            ax1.tick_params(axis='both', which='major', labelsize=10)
+            ax1.tick_params(axis='both', which='minor', labelsize=10)
+            plt.grid()
+
+            # Setup colorbar
+            ax_blank1 = fig.add_subplot(gs[1, :])
+            ax_blank1.set_visible(False)
+            cbar_ax = fig.add_subplot(gs[2, :])
+            cbar = plt.colorbar(c, cax=cbar_ax, orientation="horizontal", ticks=extended_levels[:-1])
+            cbar.set_label(r"tons km$^{-2}$", fontsize=11)
+            cbar.ax.xaxis.set_major_formatter(FormatStrFormatter(format_string))
+
+            # Save the figure using a filename indicating it's the last time step
+            plt.savefig(
+                self.out_figures + f"/surf_oil_concentration_{self.config['simulation']['name']}_last.png",
+                dpi=200,
+            )
+            plt.close()
 
 
             # plotting current vectors
@@ -268,71 +299,6 @@ class MedslikIIPlot:
             #     color="gray",
             # )
 
-            # plotting release point or center of mass
-            ax1.plot(
-                self.config["simulation"]["spill_lon"],
-                self.config["simulation"]["spill_lat"],
-                marker="+",
-                color="black",
-                markersize=14,
-            )
-
-            # Add wind vector (quiver) at the gravity center
-            ax1.quiver(
-                target_lon,  # Plot at center of gravity
-                target_lat,  # Plot at center of gravity
-                u_wind_raw,  # Use wind from gravity center
-                v_wind_raw,  # Use wind from gravity center
-                scale=50,  # Adjust the scale of the wind vector
-                color="red",  # "#1f77b4"
-                zorder=2000,
-                width=0.003,  # Width of the arrow
-                headwidth=3,
-                headlength=4,
-            )
-
-            current_time = (
-                inidate + pd.to_timedelta(ds_particles.time.values[t]) - pd.Timedelta(hours=1)
-            ).strftime("%Y-%m-%d %H:%M")
-
-            plt.xlim(lon_min, lon_max)
-            plt.ylim(lat_min, lat_max)
-
-            lon_label = "Longitude (°E)" if lon_min >= 0 else "Longitude (°W)"
-            lat_label = "Latitude (°N)" if lat_min >= 0 else "Latitude (°S)"
-
-            ax1.set_title(
-                f"Surface Oil Concentration\n{current_time}", fontsize=18, pad=20
-            )
-            ax1.set_xlabel(lon_label, fontsize=12)
-            ax1.set_ylabel(lat_label, fontsize=12)
-            ax1.tick_params(axis='both', which='major', labelsize=10)
-            ax1.tick_params(axis='both', which='minor', labelsize=10)
-            ax1.set_xlim(lon_min, lon_max)
-            ax1.set_ylim(lat_min, lat_max)
-            plt.grid()
-
-            # Blank space row (above colorbar)
-            ax_blank1 = fig.add_subplot(gs[1, :])
-            ax_blank1.set_visible(False)
-
-            # Colorbar row
-            cbar_ax = fig.add_subplot(gs[2, :])
-            cbar = plt.colorbar(
-                c, cax=cbar_ax, orientation="horizontal", ticks=extended_levels[:-1]
-            )
-            cbar.set_label(r"tons km$^{-2}$", fontsize=11)
-
-            # Format the colorbar ticks
-            cbar.ax.xaxis.set_major_formatter(FormatStrFormatter(format_string))
-
-            plt.savefig(
-                self.out_figures
-                + f"/surf_oil_concentration_{self.config['simulation']['name']}_{t+1:03d}.png",
-                dpi=200,
-            )
-
-            plt.close()
 
     def plot_mass_balance(self):
 
