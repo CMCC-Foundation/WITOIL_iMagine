@@ -222,9 +222,11 @@ class Utils:
             if dt.hour == 0:
                 hour = 24
                 day = (dt - datetime.timedelta(hours=1)).day
+                month = (dt - datetime.timedelta(hours=1)).month
             else:
                 hour = dt.hour
                 day = dt.day
+                month = dt.month
             # writing the current files
             with open(
                 f"{exp_folder}/oce_files/merc{dt.year-2000:02d}{dt.month:02d}{day:02d}{hour:02d}.mrc",
