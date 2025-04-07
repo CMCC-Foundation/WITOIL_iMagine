@@ -231,11 +231,11 @@ class Utils:
                 year = dt.year
             # writing the current files
             with open(
-                f"{exp_folder}/oce_files/merc{dt.year-2000:02d}{dt.month:02d}{day:02d}{hour:02d}.mrc",
+                f"{exp_folder}/oce_files/merc{year-2000:02d}{month:02d}{day:02d}{hour:02d}.mrc",
                 "w",
             ) as f:
                 f.write(
-                    f"Ocean forecast data for {day:02d}/{dt.month:02d}/{dt.year} {hour:02d}:00\n"
+                    f"Ocean forecast data for {day:02d}/{month:02d}/{year} {hour:02d}:00\n"
                 )
                 f.write("Subregion of the Global Ocean:\n")
                 f.write(
@@ -386,11 +386,11 @@ class Utils:
 
         # writing the current files
         with open(
-            f"{exp_folder}/oce_files/merc{dt.year-2000:02d}{month:02d}{day:02d}{hour:02d}.mrc",
+            f"{exp_folder}/oce_files/merc{year-2000:02d}{month:02d}{day:02d}{hour:02d}.mrc",
             "w",
         ) as f:
             f.write(
-                f"Ocean forecast data for {day:02d}/{month:02d}/{dt.year} {hour:02d}:00\n"
+                f"Ocean forecast data for {day:02d}/{month:02d}/{year} {hour:02d}:00\n"
             )
             f.write("Subregion of the Global Ocean:\n")
             f.write(
